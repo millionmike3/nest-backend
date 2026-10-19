@@ -52,7 +52,6 @@ export class FraudAlertsService {
   async getClusters(applicationId: string) {
     return this.prisma.fraudCluster.findMany({
       where: { applicationId },
-      // FraudCluster has NO alerts relation
     });
   }
 }

@@ -1,16 +1,8 @@
-
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AlertDispatcherService {
-  async dispatch(ownerId: string, alerts: any[]) {
-    const notifications = alerts.map(alert => ({
-      ownerId,
-      alertId: alert.id,
-      message: `Fraud Alert: ${alert.message}`,
-      sentAt: new Date(),
-    }));
-
-    return notifications;
+  async dispatch(eventId: string, applicationId: string) {
+    console.log(`Dispatching fraud event ${eventId} for application ${applicationId}`);
   }
 }

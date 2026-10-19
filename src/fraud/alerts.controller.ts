@@ -22,13 +22,9 @@ export class AlertsController {
     @Param('id') applicationId: string,
     @Body() payload: any,
   ) {
-    // Step 1: Evaluate rules (correct method)
     const rules = await this.rulesService.evaluate(applicationId, payload);
-
-    // Step 2: Trigger alerts (correct service)
     const triggered = await this.triggerService.trigger(applicationId, rules);
 
-    // Step 3: Dispatch notifications (correct signature)
     for (const event of triggered) {
       await this.dispatcherService.dispatch(event.id, applicationId);
     }
@@ -40,28 +36,16 @@ export class AlertsController {
     };
   }
 
-  /**
-   * Fraud Summary
-   * GET /alerts/summary/:id
-   */
   @Get('summary/:id')
   async getFraudSummary(@Param('id') applicationId: string) {
     return this.fraudAlerts.getSummary(applicationId);
   }
 
-  /**
-   * Fraud Timeline
-   * GET /alerts/timeline/:id
-   */
   @Get('timeline/:id')
   async getFraudTimeline(@Param('id') applicationId: string) {
     return this.fraudAlerts.getTimeline(applicationId);
   }
 
-  /**
-   * Fraud Clusters
-   * GET /alerts/clusters/:id
-   */
   @Get('clusters/:id')
   async getFraudClusters(@Param('id') applicationId: string) {
     return this.fraudAlerts.getClusters(applicationId);

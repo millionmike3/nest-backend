@@ -15,7 +15,6 @@ export class AlertTriggerService {
    * Generate fraud alerts for an application
    */
   async generateAlertsForApplication(applicationId: string) {
-    // Load the application with the fields your schema actually has
     const application = await this.prisma.application.findUnique({
       where: { id: applicationId },
       include: {
@@ -37,7 +36,7 @@ export class AlertTriggerService {
 
     if (!application) return [];
 
-    // Evaluate rules using your actual rules engine
+    // Evaluate rules
     const alerts = await this.rules.evaluate(application);
 
     const createdAlerts = [];
