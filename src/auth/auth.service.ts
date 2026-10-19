@@ -11,16 +11,25 @@ export class AuthService {
   ) {}
 
   async login(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
 
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
-    const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) throw new UnauthorizedException('Invalid credentials');
+    // FIX 1: Your schema no longer has passwordHash → use user.password
+    const valid = await bcrypt.compare(password, user.password);
 
+    if (!valid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // FIX 2: Your schema no longer has role → remove or replace
+    // FIX 3: org → organizationId is correct
     const token = this.jwt.sign({
       sub: user.id,
-      role: user.role,
       org: user.organizationId,
     });
 

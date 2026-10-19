@@ -11,32 +11,25 @@ export class AlertTriggerService {
     private readonly dispatcher: AlertDispatcherService,
   ) {}
 
-  /**
-   * Generate alerts for an owner using:
-   * - full owner fraud profile
-   * - enterprise fraud rules engine
-   * - Prisma persistence
-   * - dispatcher notifications
-   */
   async generateAlertsForOwner(ownerId: string) {
-    // Load full owner fraud profile
+    // Load owner with ONLY the fields your updated schema actually has
     const owner = await this.prisma.owner.findUnique({
       where: { id: ownerId },
       include: {
-        ownerAccount: true,        // routing numbers
-        ownerDevice: true,         // device anomaly
-        ownerDocument: {
+        accounts: true,
+        devices: true,
+        documents: {
           include: {
-            documentFraudResult: true, // fraud scores
+            fraudResults: true,
           },
         },
-        suspiciousActivityReport: true, // SAR reports
+        sarReports: true,
       },
     });
 
     if (!owner) return [];
 
-    // Evaluate rules using your unified rules engine
+    // Use the correct rule evaluation method
     const alerts = this.rules.evaluate(owner);
 
     // Persist alerts + dispatch notifications
@@ -51,31 +44,27 @@ export class AlertTriggerService {
         },
       });
 
-      // Dispatch notification
-      await this.dispatcher.dispatch(created);
+      // Dispatcher expects (alert, owner)
+      await this.dispatcher.dispatch(created, owner);
     }
 
     return alerts;
   }
 
-  /**
-   * Simple trigger method (my original version)
-   * Allows manual rule injection
-   */
   async trigger(ownerId: string, rules: any[]) {
     const alerts = [];
 
     for (const rule of rules) {
-      const alert = await this.prisma.fraudAlert.create({
+      const created = await this.prisma.fraudAlert.create({
         data: {
           ownerId,
-          rule: rule.rule,
+          type: rule.rule,
           severity: rule.severity,
-          message: rule.message,
+          meta: rule.message,
         },
       });
 
-      alerts.push(alert);
+      alerts.push(created);
     }
 
     return alerts;
