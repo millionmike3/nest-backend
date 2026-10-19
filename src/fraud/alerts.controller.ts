@@ -14,25 +14,27 @@ export class AlertsController {
   ) {}
 
   /**
-   * Trigger fraud alerts for an owner
-   * POST /alerts/owner/:id
+   * Trigger fraud alerts for an application
+   * POST /alerts/application/:id
    */
-  @Post('owner/:id')
-  async triggerAlertsForOwner(
-    @Param('id') ownerId: string,
+  @Post('application/:id')
+  async triggerAlertsForApplication(
+    @Param('id') applicationId: string,
     @Body() payload: any,
   ) {
-    // Step 1: Evaluate rules
-    const rules = await this.rulesService.evaluateRules(ownerId, payload);
+    // Step 1: Evaluate rules (correct method)
+    const rules = await this.rulesService.evaluate(applicationId, payload);
 
-    // Step 2: Trigger alerts
-    const triggered = await this.triggerService.trigger(ownerId, rules);
+    // Step 2: Trigger alerts (correct service)
+    const triggered = await this.triggerService.trigger(applicationId, rules);
 
-    // Step 3: Dispatch notifications
-    await this.dispatcherService.dispatch(ownerId, triggered);
+    // Step 3: Dispatch notifications (correct signature)
+    for (const event of triggered) {
+      await this.dispatcherService.dispatch(event.id, applicationId);
+    }
 
     return {
-      ownerId,
+      applicationId,
       triggered,
       status: 'alerts_processed',
     };
@@ -43,8 +45,8 @@ export class AlertsController {
    * GET /alerts/summary/:id
    */
   @Get('summary/:id')
-  async getFraudSummary(@Param('id') ownerId: string) {
-    return this.fraudAlerts.getSummary(ownerId);
+  async getFraudSummary(@Param('id') applicationId: string) {
+    return this.fraudAlerts.getSummary(applicationId);
   }
 
   /**
@@ -52,8 +54,8 @@ export class AlertsController {
    * GET /alerts/timeline/:id
    */
   @Get('timeline/:id')
-  async getFraudTimeline(@Param('id') ownerId: string) {
-    return this.fraudAlerts.getTimeline(ownerId);
+  async getFraudTimeline(@Param('id') applicationId: string) {
+    return this.fraudAlerts.getTimeline(applicationId);
   }
 
   /**
@@ -61,7 +63,7 @@ export class AlertsController {
    * GET /alerts/clusters/:id
    */
   @Get('clusters/:id')
-  async getFraudClusters(@Param('id') ownerId: string) {
-    return this.fraudAlerts.getClusters(ownerId);
+  async getFraudClusters(@Param('id') applicationId: string) {
+    return this.fraudAlerts.getClusters(applicationId);
   }
 }

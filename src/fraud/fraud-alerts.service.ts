@@ -18,7 +18,8 @@ export class FraudAlertsService {
     const alerts = await this.trigger.generateAlertsForApplication(applicationId);
 
     for (const alert of alerts) {
-      await this.dispatcher.dispatch(alert, applicationId);
+      // dispatcher expects (eventId: string, applicationId: string)
+      await this.dispatcher.dispatch(alert.id, applicationId);
     }
 
     return alerts;
@@ -46,13 +47,12 @@ export class FraudAlertsService {
   }
 
   /**
-   * Fraud Clusters (your schema supports this)
+   * Fraud Clusters
    */
   async getClusters(applicationId: string) {
     return this.prisma.fraudCluster.findMany({
       where: { applicationId },
-      // FraudCluster has NO "alerts" relation in your schema
-      // It only has: clusterId, signals, metadata
+      // FraudCluster has NO alerts relation
     });
   }
 }

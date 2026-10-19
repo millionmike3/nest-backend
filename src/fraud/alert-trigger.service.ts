@@ -20,9 +20,6 @@ export class AlertTriggerService {
       where: { id: applicationId },
       include: {
         fraudEvents: true,
-        fraudScores: true,
-        fraudLadders: true,
-        fraudChains: true,
         FraudAiInferenceLog: true,
         FraudEscalation: true,
         FraudAnomalyDetection: true,
@@ -41,9 +38,8 @@ export class AlertTriggerService {
     if (!application) return [];
 
     // Evaluate rules using your actual rules engine
-    const alerts = this.rules.evaluate(application);
+    const alerts = await this.rules.evaluate(application);
 
-    // Persist alerts as FraudEvent records
     const createdAlerts = [];
 
     for (const alert of alerts) {
@@ -59,8 +55,8 @@ export class AlertTriggerService {
 
       createdAlerts.push(created);
 
-      // Dispatch alert
-      await this.dispatcher.dispatch(created, application);
+      // Dispatcher expects (eventId: string, applicationId: string)
+      await this.dispatcher.dispatch(created.id, applicationId);
     }
 
     return createdAlerts;
