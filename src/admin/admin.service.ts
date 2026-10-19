@@ -10,6 +10,8 @@ export class AdminService {
   }
 
   async getUser(id: string) {
-    return this.prisma.user.findUnique({ where: { id } });
+    return this.prisma.user.findUnique({
+      where: { id: Number(id) },
+    });
   }
 }

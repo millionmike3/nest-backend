@@ -19,20 +19,24 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // FIX 1: Your schema no longer has passwordHash → use user.password
-    const valid = await bcrypt.compare(password, user.password);
+    // ✔ Your schema uses passwordHash, NOT password
+    const valid = await bcrypt.compare(password, user.passwordHash ?? '');
 
     if (!valid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // FIX 2: Your schema no longer has role → remove or replace
-    // FIX 3: org → organizationId is correct
+    // ✔ Your schema has NO organizationId
+    // ✔ Your schema DOES have role, ownerId, id
     const token = this.jwt.sign({
       sub: user.id,
-      org: user.organizationId,
+      role: user.role,
+      ownerId: user.ownerId,
     });
 
-    return { token, user };
+    return {
+      token,
+      user,
+    };
   }
 }

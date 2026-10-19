@@ -11,62 +11,81 @@ export class AlertTriggerService {
     private readonly dispatcher: AlertDispatcherService,
   ) {}
 
-  async generateAlertsForOwner(ownerId: string) {
-    // Load owner with ONLY the fields your updated schema actually has
-    const owner = await this.prisma.owner.findUnique({
-      where: { id: ownerId },
+  /**
+   * Generate fraud alerts for an application
+   */
+  async generateAlertsForApplication(applicationId: string) {
+    // Load the application with the fields your schema actually has
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId },
       include: {
-        accounts: true,
-        devices: true,
-        documents: {
-          include: {
-            fraudResults: true,
-          },
-        },
-        sarReports: true,
+        fraudEvents: true,
+        fraudScores: true,
+        fraudLadders: true,
+        fraudChains: true,
+        FraudAiInferenceLog: true,
+        FraudEscalation: true,
+        FraudAnomalyDetection: true,
+        FraudFeatureStore: true,
+        FraudCluster: true,
+        FraudTrajectoryModel: true,
+        FraudPropagationModel: true,
+        FraudContagionMapping: true,
+        FraudTemporalEvolution: true,
+        FraudNetworkMapping: true,
+        FraudPatternEvolution: true,
+        FraudSignalChain: true,
       },
     });
 
-    if (!owner) return [];
+    if (!application) return [];
 
-    // Use the correct rule evaluation method
-    const alerts = this.rules.evaluate(owner);
+    // Evaluate rules using your actual rules engine
+    const alerts = this.rules.evaluate(application);
 
-    // Persist alerts + dispatch notifications
+    // Persist alerts as FraudEvent records
+    const createdAlerts = [];
+
     for (const alert of alerts) {
-      const created = await this.prisma.fraudAlert.create({
+      const created = await this.prisma.fraudEvent.create({
         data: {
-          ownerId,
-          organizationId: owner.organizationId,
-          type: alert.type,
-          severity: alert.severity,
-          meta: alert.message,
+          applicationId,
+          eventType: alert.type,
+          signal: alert.signal ?? null,
+          payload: alert.payload ?? null,
+          metadata: alert.message ? { message: alert.message } : {},
         },
       });
 
-      // Dispatcher expects (alert, owner)
-      await this.dispatcher.dispatch(created, owner);
+      createdAlerts.push(created);
+
+      // Dispatch alert
+      await this.dispatcher.dispatch(created, application);
     }
 
-    return alerts;
+    return createdAlerts;
   }
 
-  async trigger(ownerId: string, rules: any[]) {
-    const alerts = [];
+  /**
+   * Manual trigger for custom rule sets
+   */
+  async trigger(applicationId: string, rules: any[]) {
+    const created = [];
 
     for (const rule of rules) {
-      const created = await this.prisma.fraudAlert.create({
+      const event = await this.prisma.fraudEvent.create({
         data: {
-          ownerId,
-          type: rule.rule,
-          severity: rule.severity,
-          meta: rule.message,
+          applicationId,
+          eventType: rule.rule,
+          signal: rule.signal ?? null,
+          payload: rule.payload ?? null,
+          metadata: rule.message ? { message: rule.message } : {},
         },
       });
 
-      alerts.push(created);
+      created.push(event);
     }
 
-    return alerts;
+    return created;
   }
 }

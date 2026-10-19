@@ -12,52 +12,47 @@ export class FraudAlertsService {
   ) {}
 
   /**
-   * ORIGINAL LOGIC
-   * Generate alerts for an owner
+   * Generate alerts for an application
    */
-  async generateAlerts(ownerId: string) {
-    const alerts = await this.trigger.generateAlertsForOwner(ownerId);
+  async generateAlerts(applicationId: string) {
+    const alerts = await this.trigger.generateAlertsForApplication(applicationId);
 
     for (const alert of alerts) {
-      await this.dispatcher.dispatch(alert);
+      await this.dispatcher.dispatch(alert, applicationId);
     }
 
     return alerts;
   }
 
   /**
-   * NEW LOGIC
-   * Fraud Summary (recent alerts)
+   * Fraud Summary (recent events)
    */
-  async getSummary(ownerId: string) {
-    return this.prisma.fraudAlert.findMany({
-      where: { ownerId },
+  async getSummary(applicationId: string) {
+    return this.prisma.fraudEvent.findMany({
+      where: { applicationId },
       orderBy: { createdAt: 'desc' },
       take: 25,
     });
   }
 
   /**
-   * NEW LOGIC
-   * Fraud Timeline (chronological alerts)
+   * Fraud Timeline (chronological events)
    */
-  async getTimeline(ownerId: string) {
-    return this.prisma.fraudAlert.findMany({
-      where: { ownerId },
+  async getTimeline(applicationId: string) {
+    return this.prisma.fraudEvent.findMany({
+      where: { applicationId },
       orderBy: { createdAt: 'asc' },
     });
   }
 
   /**
-   * NEW LOGIC
-   * Fraud Clusters (grouped alerts)
+   * Fraud Clusters (your schema supports this)
    */
-  async getClusters(ownerId: string) {
+  async getClusters(applicationId: string) {
     return this.prisma.fraudCluster.findMany({
-      where: { ownerId },
-      include: {
-        alerts: true,
-      },
+      where: { applicationId },
+      // FraudCluster has NO "alerts" relation in your schema
+      // It only has: clusterId, signals, metadata
     });
   }
 }
